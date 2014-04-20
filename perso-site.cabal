@@ -14,7 +14,7 @@ cabal-version:       >=1.10
 
 executable perso-site
   main-is: Main.hs
-  other-modules: Web.Xml
+  other-modules: Web.Pandoc
 
   default-extensions:  TemplateHaskell
   build-depends:       base ==4.7.*,
@@ -25,10 +25,8 @@ executable perso-site
                        highlighting-kate,
                        mtl,
                        scotty ==0.7.*,
-                       tagsoup,
                        text,
                        pandoc == 1.12.3.*,
-                       xml,
                        shakespeare ==2.0.*,
                        bytestring,
                        directory ==1.2.*,

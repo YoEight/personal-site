@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE OverloadedLists   #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module : Main
@@ -15,29 +14,21 @@ import           Control.Monad (join)
 import           Control.Monad.Trans (liftIO)
 import qualified Data.Map as M
 import           Data.List (sortBy)
-import           Data.Maybe
 import           Data.Foldable (for_)
 import           Data.Traversable (traverse)
-import           System.IO.Error
+import           System.IO.Error (isDoesNotExistError, tryIOError)
 
 --------------------------------------------------------------------------------
-import qualified Data.ByteString.Char8 as B
-import           Data.Default
-import           Data.Text.Lazy (Text, pack)
-import qualified Data.Text.Lazy.IO as T
-import           Network.HTTP.Types
-import           System.Directory
-import           System.FilePath
-import Text.Cassius
-import Text.Hamlet
-import           Text.Highlighting.Kate
-import Text.Blaze.Html.Renderer.Text
-import           Text.Blaze.Html hiding (Tag)
-import           Text.HTML.TagSoup
-import Text.XML.Light
-import Text.XML.Light.Cursor
-import           Text.Pandoc
-import           Web.Scotty
+import Data.Text.Lazy (Text)
+import Network.HTTP.Types (status404)
+import System.Directory (getDirectoryContents)
+import System.FilePath ((</>))
+import Text.Hamlet (shamletFile)
+import Text.Blaze.Html.Renderer.Text (renderHtml)
+import Web.Scotty
+
+--------------------------------------------------------------------------------
+import Web.Pandoc
 
 --------------------------------------------------------------------------------
 data Article =
@@ -69,15 +60,10 @@ article = do
     day   <- param "day"
     name  <- param "name"
     withArticleContent (year </> month </> day </> name) $ \doc -> do
-        let reader_opts = def { readerExtensions = githubMarkdownExtensions }
-            writer_opts = def { writerHighlight      = True
-                              , writerHighlightStyle = haddock
-                              }
-            pandoc  = readMarkdown reader_opts doc
+        let pandoc  = readGithubMarkdown doc
             title   = replace '_' ' ' name
-            css     = unsafeByteString $ B.pack $ styleToCss haddock
             header  = $(shamletFile "html/article-header.hamlet")
-            content = writeHtml writer_opts pandoc
+            content = writePandocHtml pandoc
         html $ renderHtml $(shamletFile "html/template.hamlet")
 
 --------------------------------------------------------------------------------
