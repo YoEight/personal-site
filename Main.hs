@@ -50,6 +50,7 @@ index = do
     let title   = "Home" :: Text
         content = $(shamletFile "html/articles.hamlet")
         header  =  ""    :: Text
+    keepAlive
     html $ renderHtml $(shamletFile "html/template.hamlet")
 
 --------------------------------------------------------------------------------
@@ -64,6 +65,7 @@ article = do
             title   = replace '_' ' ' name
             header  = $(shamletFile "html/article-header.hamlet")
             content = writePandocHtml pandoc
+        keepAlive
         html $ renderHtml $(shamletFile "html/template.hamlet")
 
 --------------------------------------------------------------------------------
@@ -116,3 +118,12 @@ loadArticles = fmap join . traverse (go "" Year) =<< loadSortedContents root
 --------------------------------------------------------------------------------
 replace :: Eq a => a -> a -> [a] -> [a]
 replace trg val = map (\c -> if c == trg then val else c)
+
+--------------------------------------------------------------------------------
+keepAlive :: ActionM ()
+keepAlive = do
+    con <- header "Connection"
+    for_ con $ \c ->
+        if c == "keep-alive"
+        then setHeader "Connection" c
+        else return ()
