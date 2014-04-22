@@ -19,6 +19,7 @@ import           Data.Traversable (traverse)
 import           System.IO.Error (isDoesNotExistError, tryIOError)
 
 --------------------------------------------------------------------------------
+import Data.Configurator
 import Data.Text.Lazy (Text)
 import Network.HTTP.Types (status404)
 import System.Directory (getDirectoryContents)
@@ -38,8 +39,18 @@ data Article =
             } deriving Show
 
 --------------------------------------------------------------------------------
+getPort :: IO Int
+getPort = do
+    cfg <- load [Required "config/site.cfg"]
+    require cfg "site_port"
+
+--------------------------------------------------------------------------------
 main :: IO ()
-main = scotty 3000 $ do
+main = getPort >>= \p -> scotty p handlers
+
+--------------------------------------------------------------------------------
+handlers :: ScottyM ()
+handlers = do
     get "/" index
     get "/article/:year/:month/:day/:name" article
 

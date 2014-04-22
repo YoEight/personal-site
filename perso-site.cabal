@@ -30,7 +30,8 @@ executable perso-site
                        shakespeare ==2.0.*,
                        bytestring,
                        directory ==1.2.*,
-                       filepath
+                       filepath,
+                       configurator
 
 
   ghc-options: -O2 -threaded
