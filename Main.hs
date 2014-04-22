@@ -90,7 +90,7 @@ toInt = read
 
 --------------------------------------------------------------------------------
 sortFilePath :: [FilePath] -> [FilePath]
-sortFilePath = sortBy go where
+sortFilePath = reverse . sortBy go where
   go a b = compare (toInt a) (toInt b)
 
 --------------------------------------------------------------------------------
