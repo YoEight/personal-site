@@ -80,7 +80,8 @@ withArticleContent path k =
 
 --------------------------------------------------------------------------------
 loadSortedContents :: FilePath -> IO [FilePath]
-loadSortedContents path =  fmap (filter useful) $ getDirectoryContents path
+loadSortedContents path =
+    fmap (sortFilePath . filter useful) $ getDirectoryContents path
   where
     useful path = path /= "." && path /= ".."
 
