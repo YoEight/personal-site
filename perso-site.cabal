@@ -31,7 +31,10 @@ executable perso-site
                        bytestring,
                        directory ==1.2.*,
                        filepath,
-                       configurator
+                       configurator,
+                       fast-logger,
+                       wai-extra,
+                       warp
 
 
   ghc-options: -O2 -threaded

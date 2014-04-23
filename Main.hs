@@ -20,10 +20,14 @@ import           System.IO.Error (isDoesNotExistError, tryIOError)
 
 --------------------------------------------------------------------------------
 import Data.Configurator
+import Data.Default (def)
 import Data.Text.Lazy (Text)
 import Network.HTTP.Types (status404)
+import Network.Wai.Handler.Warp (run)
+import Network.Wai.Middleware.RequestLogger
 import System.Directory (getDirectoryContents)
 import System.FilePath ((</>))
+import System.Log.FastLogger (newFileLoggerSet)
 import Text.Hamlet (shamletFile)
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import Web.Scotty
@@ -39,14 +43,20 @@ data Article =
             } deriving Show
 
 --------------------------------------------------------------------------------
-getPort :: IO Int
-getPort = do
-    cfg <- load [Required "config/site.cfg"]
-    require cfg "site_port"
-
---------------------------------------------------------------------------------
 main :: IO ()
-main = getPort >>= \p -> scotty p handlers
+main = do
+    cfg        <- load [Required "config/site.cfg"]
+    port       <- require cfg "site_port"
+    logFile    <- require cfg "log_file"
+    logBufSize <- require cfg "log_buffer"
+    logSet     <- newFileLoggerSet logBufSize logFile
+    app        <- scottyApp handlers
+    let settings = def
+                   { outputFormat = Detailed True
+                   , destination  = Logger logSet
+                   }
+    mware <- mkRequestLogger settings
+    run port $ mware app
 
 --------------------------------------------------------------------------------
 handlers :: ScottyM ()
