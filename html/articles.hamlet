@@ -3,4 +3,4 @@ $forall a <- articles
        <h4 .list-group-item-heading>
          #{articleTitle a}
        <p .list-group-item-text>
-         #{articleDate a}
+         #{formatTime defaultTimeLocale "%Y-%m-%d" $ articleDate a}

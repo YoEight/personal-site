@@ -34,8 +34,9 @@ executable perso-site
                        configurator,
                        fast-logger,
                        wai-extra,
-                       warp
-
+                       warp,
+                       time,
+                       old-locale
 
   ghc-options: -O2 -threaded
   -- hs-source-dirs:

@@ -22,11 +22,13 @@ import           System.IO.Error (isDoesNotExistError, tryIOError)
 import Data.Configurator
 import Data.Default (def)
 import Data.Text.Lazy (Text)
+import Data.Time
 import Network.HTTP.Types (status404)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.RequestLogger
 import System.Directory (getDirectoryContents)
 import System.FilePath ((</>))
+import System.Locale (defaultTimeLocale)
 import System.Log.FastLogger (newFileLoggerSet)
 import Text.Hamlet (shamletFile)
 import Text.Blaze.Html.Renderer.Text (renderHtml)
@@ -38,7 +40,7 @@ import Web.Pandoc
 --------------------------------------------------------------------------------
 data Article =
     Article { articlePath  :: FilePath
-            , articleDate  :: String
+            , articleDate  :: UTCTime
             , articleTitle :: String
             } deriving Show
 
@@ -62,7 +64,7 @@ main = do
 handlers :: ScottyM ()
 handlers = do
     get "/" index
-    get "/article/:year/:month/:day/:name" article
+    get "/article/:name" article
 
 --------------------------------------------------------------------------------
 index :: ActionM ()
@@ -77,13 +79,11 @@ index = do
 --------------------------------------------------------------------------------
 article :: ActionM ()
 article = do
-    year  <- param "year"
-    month <- param "month"
-    day   <- param "day"
     name  <- param "name"
-    withArticleContent (year </> month </> day </> name) $ \doc -> do
+    withArticleContent name $ \doc -> do
         let pandoc   = readGithubMarkdown doc
-            title    = replace '_' ' ' name
+            title    = replace '_' ' ' $ drop 11 name
+            date     = take 10 name
             header   = $(shamletFile "html/article-header.hamlet")
             acontent = writePandocHtml pandoc
             content  = $(shamletFile "html/article.hamlet")
@@ -95,48 +95,30 @@ withArticleContent :: FilePath -> (String -> ActionM ()) -> ActionM ()
 withArticleContent path k =
     either handler k =<< liftIO (tryIOError $ readFile filepath)
   where
-    filepath = "articles/" ++ path
+    filepath = "articles" </> path
     handler e
         | isDoesNotExistError e = status status404 >> text "Not Found"
         | otherwise             = liftIO $ ioError e
 
 --------------------------------------------------------------------------------
-loadSortedContents :: FilePath -> IO [FilePath]
-loadSortedContents path =
-    fmap (sortFilePath . filter useful) $ getDirectoryContents path
+sortArticles :: [Article] -> [Article]
+sortArticles = reverse . sortBy go where
+  go a b = compare (articleDate a) (articleDate b)
+
+--------------------------------------------------------------------------------
+usefulContents :: FilePath -> IO [FilePath]
+usefulContents = fmap (filter go) . getDirectoryContents
   where
-    useful path = path /= "." && path /= ".."
-
---------------------------------------------------------------------------------
-toInt :: String -> Int
-toInt = read
-
---------------------------------------------------------------------------------
-sortFilePath :: [FilePath] -> [FilePath]
-sortFilePath = reverse . sortBy go where
-  go a b = compare (toInt a) (toInt b)
-
---------------------------------------------------------------------------------
-data Scope = Day
-           | Month
-           | Year deriving Enum
+    go p = p /= "." && p /= ".."
 
 --------------------------------------------------------------------------------
 loadArticles :: IO [Article]
-loadArticles = fmap join . traverse (go "" Year) =<< loadSortedContents root
+loadArticles = fmap (sortArticles . fmap go) $ usefulContents "articles"
   where
-    root = "articles"
-    go p Day dir =
-        let finalDir = p </> dir
-            leaf     = root </> finalDir
-            date     = replace '/' '.' finalDir
-            make n   = Article (finalDir </> n) date (replace '_' ' ' n) in
-        fmap (fmap make) (loadSortedContents leaf)
-    go p s dir =
-        let newDir = p    </> dir
-            newP   = root </> newDir
-            newS   = pred s in
-        fmap join . traverse (go newDir newS) =<< loadSortedContents newP
+    go p =
+        let date  = readTime defaultTimeLocale "%Y-%m-%d" $ take 10 p
+            title = replace '_' ' ' $ drop 11 p in
+        Article p date title
 
 --------------------------------------------------------------------------------
 replace :: Eq a => a -> a -> [a] -> [a]
