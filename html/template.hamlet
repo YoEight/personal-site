@@ -10,9 +10,10 @@ $doctype 5
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
     #{header}
   <body>
-    <nav class="navbar navbar-default" role="navigation">
-      <div class="container-fluid">
-        <!-- Brand and toggle get grouped for better mobile display -->
+    <div .container>
+      <nav class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+             <!-- Brand and toggle get grouped for better mobile display -->
         <div class="navbar-header">
           <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
             <span class="sr-only">Toggle navigation
@@ -26,7 +27,7 @@ $doctype 5
           <!-- ul class="nav navbar-nav" -->
             <!-- li -->
               <!-- a href="/about">About -->
-    #{content}
+      #{content}
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js">

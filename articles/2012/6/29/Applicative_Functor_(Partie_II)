@@ -1,5 +1,3 @@
-# Applicative Functor (Partie II)
-
 Après une petite introduction aux Applicative Functors, nous allons aujourd’hui plus s’intéresser à leurs utilisations dans des situations "réelles". Nous verrons tout au long de l’article:
 
 1. Le type algébrique Validation

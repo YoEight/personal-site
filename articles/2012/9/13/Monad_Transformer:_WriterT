@@ -1,5 +1,3 @@
-# Monad Transformer: WriterT
-
 Aujourd’hui nous allons voir un cas d’utilisation de monad transformer. Pourquoi avoir besoin de cette abstraction ? Tout simplement pour pouvoir combiner les effets de monades différentes. La monade Writer généralement utilisée pour logguer un calcul dans un language pure (comme Haskell), est extrêmement simple. C’est un tuple composé du type du résultat attendu et du type utilisé pour accumuler les logs. Le type utilisé pour les logs devra être un Monoid, c’est à dire avoir un élément neutre (que l’on nommera zero) et une opération binaire associative (que l’on nommera append).
 
 ```scala

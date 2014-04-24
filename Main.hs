@@ -82,10 +82,11 @@ article = do
     day   <- param "day"
     name  <- param "name"
     withArticleContent (year </> month </> day </> name) $ \doc -> do
-        let pandoc  = readGithubMarkdown doc
-            title   = replace '_' ' ' name
-            header  = $(shamletFile "html/article-header.hamlet")
-            content = writePandocHtml pandoc
+        let pandoc   = readGithubMarkdown doc
+            title    = replace '_' ' ' name
+            header   = $(shamletFile "html/article-header.hamlet")
+            acontent = writePandocHtml pandoc
+            content  = $(shamletFile "html/article.hamlet")
         keepAlive
         html $ renderHtml $(shamletFile "html/template.hamlet")
 
