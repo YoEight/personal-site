@@ -10,7 +10,7 @@ maintainer:          yo.eight@gmail.com
 category:            Web
 build-type:          Simple
 -- extra-source-files:
-cabal-version:       >=1.10
+cabal-version:       >=1.18
 
 executable perso-site
   main-is: Main.hs
@@ -24,9 +24,9 @@ executable perso-site
                        http-types,
                        highlighting-kate,
                        mtl,
-                       scotty ==0.7.*,
+                       scotty ==0.8.*,
                        text,
-                       pandoc == 1.12.3.*,
+                       pandoc == 1.12.4.*,
                        shakespeare ==2.0.*,
                        bytestring,
                        directory ==1.2.*,
