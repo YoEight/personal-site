@@ -1,0 +1,99 @@
+It been a long time since I liked to talk about recursion schemes, specially in Haskell. Unlike the common belief, hardest Haskell topic for me wasn't Monad but recursion.
+If for you recursion means only to call the same function internally, you gonna have a very bad time !
+
+Haskell is really an expressive language and a common pattern when programming in such language is to generalize things that look common. Before digging into meat of this blog, let's define
+a simple recursive function.
+
+```haskell
+map :: (a -> b) -> [a] -> [b]
+map _ []     = []
+map f (a:as) = f a : map f as
+```
+
+It's a very common and simple recursive function. So basically we deconstruct the list and each item is passed to `f` to get a `b`. The tail of the list is
+handled by a new to call to `map` function. Desconstructing a structure is commonly referred as `catamorphism` also called `fold`
+
+Here another folding function:
+
+```haskell
+length :: [a] -> Int
+length l = go 0 l
+  where
+    go i []     = i
+    go i (_:as) = go (i+1) as
+```
+
+It's pretty similar to `map` except we are carrying a extra state value to hold the current length of the list. Those differ in the direction of their folding. `map` fold from right to left (starting from the bottom of list to its head) while `length` does the opposite.
+
+we can abstract those behaviors by implementing well-known functions `foldl` and `foldr`
+
+```haskell
+foldl :: (b -> a -> b) -> b -> [a] -> b
+foldl _ b []     = b
+foldl k b (x:xs) = foldl k (k b x) xs
+
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr _ b []     = b
+foldr k b (x:xs) = f x (foldr k b xs)
+```
+
+Let's use our new tools to reimplement `map` and `length`
+
+```haskell
+map :: (a -> b) -> [a] -> [b]
+map f as = foldr ((:) . f) [] as
+
+length :: [a] -> Int
+length as = foldl (const succ) 0 as
+```
+
+So basically, we don't use recursion directly but we also don't have to know the internal representation of the list. All we have to know is we can traverse a list in
+whatever direction we want. We gain abstraction.
+
+Astute haskeller already knows we can make `foldl` and `foldr` more general by using `Foldable` typeclass.
+
+```haskell
+foldl :: Foldable f => (b -> a -> b) -> b -> f a -> b
+foldr :: Foldable f => (a -> b -> b) -> b -> f a -> b
+```
+
+Anything related to Haskell Stdlib will stop here. Now, we are going to challenge our recursivity comprehension. Let's define a very strange structure.
+
+```haskell
+newtype Mu f = Mu (f (Mu f))
+```
+
+The first time is always intimidating when you introduce to such structure. Now we define a much simple data structure:
+
+```haskell
+data Cons a b = Cons a b | Nil
+```
+
+So it's very similar to list internal representation. So why the extra type parameter ? First, `Cons` type is not recursive like list data constructor. So how do we
+encode recursivity into this new type ? We just have to use `Mu` !
+
+Mu allows us to encode a type level recursity aka. We can acknoledge by its type we are dealing with a recursive type. Here how it goes.
+
+```haskell
+type List a = Mu (Cons a)
+```
+
+So anytime we unwrap `Mu (Cons a)` we got `Cons a (Mu (Cons a))`. By repeating that operation several times we able to the recursion pattern.
+Let's add some utility functions to have a grasp on what is going on down there.
+
+```haskell
+
+data Cons a b = Cons a b | Nil
+
+newtype Mu f = Mu (f (Mu f))
+
+type List a = Mu (Cons a)
+
+-- | Like (:) data constructor
+cons :: a -> List a -> List a
+cons a as = Mu $ Cons a as
+
+nil :: List a
+nil = Mu Nil
+
+```
