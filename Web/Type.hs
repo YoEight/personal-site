@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module : Web.Pandoc
+-- Module : Web.Type
 -- Copyright : (C) 2014 Yorick Laupa
 -- License : (see the file LICENSE)
 --
@@ -9,32 +9,31 @@
 -- Portability : non-portable
 --
 --------------------------------------------------------------------------------
-module Web.Pandoc where
+module Web.Type where
 
 --------------------------------------------------------------------------------
-import Data.ByteString.Char8 (pack)
-import Text.Blaze.Html (Html, unsafeByteString)
-import Text.Highlighting.Kate (haddock, styleToCss)
+import Data.Time
 import Text.Pandoc
 
 --------------------------------------------------------------------------------
-readGithubMarkdown :: String -> Pandoc
-readGithubMarkdown = readMarkdown readerOpts
+data Input
+    = Index [String]
+    | GetArticle String String
 
 --------------------------------------------------------------------------------
-readerOpts :: ReaderOptions
-readerOpts = def { readerExtensions = githubMarkdownExtensions }
+data Output
+    = ArticleList [Article]
+    | ArticleView String String Pandoc
+    | NotFound
 
 --------------------------------------------------------------------------------
-writerOpts :: WriterOptions
-writerOpts = def { writerHighlight      = True
-                 , writerHighlightStyle = haddock
-                 }
+data AppState = AppState
 
 --------------------------------------------------------------------------------
-writePandocHtml :: Pandoc -> Html
-writePandocHtml = writeHtml writerOpts
-
---------------------------------------------------------------------------------
-syntaxHighlightingCss :: Html
-syntaxHighlightingCss = unsafeByteString $ pack $ styleToCss haddock
+data Article
+    = Article
+      { articleName  :: !String
+      , articleDate  :: !UTCTime
+      , articleTitle :: !String
+      }
+    deriving Show

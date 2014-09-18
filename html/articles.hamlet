@@ -1,5 +1,5 @@
 $forall a <- articles
-    <a href="/article/#{articlePath a}" .list-group-item>
+    <a href="/article/#{articleName a}" .list-group-item>
        <h4 .list-group-item-heading>
          #{articleTitle a}
        <p .list-group-item-text>

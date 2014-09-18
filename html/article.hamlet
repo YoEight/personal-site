@@ -2,4 +2,4 @@
   <h1>
     #{title}
     <small>#{date}
-#{acontent}
+#{docHtml}
