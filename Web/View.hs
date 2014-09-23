@@ -38,24 +38,35 @@ view respond o
           ArticleView title date doc
               -> viewArticleView respond title date doc
           NotFound
-              -> respond $ responseLBS status404 [] ""
+              -> respond $ responseLBS status404 headers "Not Found !"
+
+  where
+    headers = [ (hContentType, "text/plain")
+              , (hConnection,  "keep-alive")
+              ]
 
 --------------------------------------------------------------------------------
 viewArticleList :: Respond -> [Article] -> IO ResponseReceived
 viewArticleList respond articles
-    = respond $ responseBuilder status202 [] html
+    = respond $ responseBuilder status202 headers html
   where
     title   = "Home" :: Text
     header  = ""     :: Text
     content = $(shamletFile "html/articles.hamlet")
     html    = renderHtmlBuilder $(shamletFile "html/template.hamlet")
+    headers = [ (hContentType, "text/html")
+              , (hConnection,  "keep-alive")
+              ]
 
 --------------------------------------------------------------------------------
 viewArticleView :: Respond -> String -> String -> Pandoc -> IO ResponseReceived
 viewArticleView respond title date doc
-    = respond $ responseBuilder status202 [] html
+    = respond $ responseBuilder status202 headers html
   where
     header  = $(shamletFile "html/article-header.hamlet")
     docHtml = writePandocHtml doc
     content = $(shamletFile "html/article.hamlet")
     html    = renderHtmlBuilder $(shamletFile "html/template.hamlet")
+    headers = [ (hContentType, "text/html")
+              , (hConnection,  "keep-alive")
+              ]
