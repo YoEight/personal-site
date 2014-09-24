@@ -51,7 +51,7 @@ executable post-repository
   main-is:             Main.hs
 
   -- Modules included in this executable, other than Main.
-  -- other-modules:
+  other-modules:      Web.DB
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
@@ -80,7 +80,11 @@ executable post-repository
                        stm,
                        wai-routing,
                        resource-pool == 0.2.*,
-                       sqlite-simple == 0.4.*
+                       sqlite-simple == 0.4.*,
+                       time,
+                       aeson,
+                       base64-bytestring,
+                       wai-predicates == 0.8.*
 
   -- Directories containing source files.
   -- hs-source-dirs:

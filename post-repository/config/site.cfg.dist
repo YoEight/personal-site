@@ -1,0 +1,4 @@
+db_name = "my_amazing_db"
+site_port = 3000
+log_file = "site.log"
+log_buffer = 4096
