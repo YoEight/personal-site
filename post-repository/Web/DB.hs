@@ -55,6 +55,7 @@ data PostInfo
 data Post
     = Post
       { postInfo    :: !PostInfo
+      , postStyle   :: !L.Text
       , postContent :: !L.Text
       }
 
@@ -62,14 +63,15 @@ data Post
 insertPost :: S.Text
            -> S.Text
            -> L.Text
+           -> L.Text
            -> Int
            -> UTCTime
            -> Connection
            -> IO ()
-insertPost name title content etag date con
+insertPost name title style content etag date con
     = execute_ con qInsertPost
   where
-    row = (name, title, content, etag, date)
+    row = (name, title, style, content, etag, date)
 
 --------------------------------------------------------------------------------
 retrievePost :: PostName -> Etag -> Connection -> IO (Either Status Post)
@@ -82,10 +84,11 @@ retrievePost name etag con
              else do resP <- query con qGetPost nRow
                      case resP of
                          []  -> return $ Left NotFound
-                         (n,t,c,e,d):_
+                         (n,t,s,c,e,d):_
                              -> let info = makePostInfo n t e d
                                     post = Post
                                            { postInfo    = info
+                                           , postStyle   = s
                                            , postContent = c
                                            } in
 
@@ -124,7 +127,8 @@ makePostInfo name title etag date
 --------------------------------------------------------------------------------
 qInsertPost :: Query
 qInsertPost
-    = "INSERT INTO posts (name,title,content,etag,date) VALUES (?,?,?,?,?)"
+    = "INSERT INTO \
+      \posts (name,title,style,content,etag,date) VALUES (?,?,?,?,?)"
 
 --------------------------------------------------------------------------------
 qUpdatePost :: Query
@@ -134,7 +138,7 @@ qUpdatePost
 --------------------------------------------------------------------------------
 qGetPost :: Query
 qGetPost
-    = "SELECT name, title, content, etag, date FROM posts where name = ?"
+    = "SELECT name, title, style, content, etag, date FROM posts where name = ?"
 
 --------------------------------------------------------------------------------
 qEtagMatchesPost :: Query

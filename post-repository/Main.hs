@@ -60,7 +60,7 @@ getPosts db _ respond
              let bytes   = encode $ fmap postInfoJSON posts
                  headers = [(hContentType, "application/json")]
 
-             respond $ responseLBS status202 headers bytes
+             respond $ responseLBS status200 headers bytes
 
 --------------------------------------------------------------------------------
 getPost :: DBName -> (PostName ::: Etag) -> Continue IO -> IO ResponseReceived
@@ -69,15 +69,12 @@ getPost db (name ::: etag) respond
           do rE <- retrievePost name etag con
              case rE of
                  Left s
-                     -> case s of
-                            NotFound
-                                -> respond $ responseLBS status404 [] ""
-                            NoChange
-                                -> respond $ responseLBS status304 [] ""
+                     | NotFound <- s -> respond $ responseLBS status404 [] ""
+                     | NoChange <- s -> respond $ responseLBS status304 [] ""
                  Right post
                      -> let bytes   = encode $ postJSON post
                             headers = [(hContentType, "application/json")] in
-                        respond $ responseLBS status202 headers bytes
+                        respond $ responseLBS status200 headers bytes
 
 --------------------------------------------------------------------------------
 -- Encoding
@@ -94,5 +91,6 @@ postInfoJSON info
 postJSON :: Post -> Value
 postJSON post
     = object [ "info"    .= postInfoJSON (postInfo post)
+             , "style"   .= postStyle post
              , "content" .= postContent post
              ]
