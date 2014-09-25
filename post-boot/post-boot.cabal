@@ -51,7 +51,7 @@ executable post-boot
   main-is:             Main.hs
 
   -- Modules included in this executable, other than Main.
-  -- other-modules:
+  other-modules:      Web.Pandoc
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
@@ -59,35 +59,20 @@ executable post-boot
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.7 && <4.8,
                        blaze-html,
-                       containers,
-                       data-default,
-                       http-types,
                        highlighting-kate,
                        mtl,
                        text,
                        pandoc == 1.13.*,
-                       shakespeare,
                        bytestring,
-                       directory,
-                       filepath,
-                       configurator,
-                       fast-logger,
-                       wai-extra,
-                       warp,
                        time,
                        old-locale,
-                       wai == 3.*,
-                       stm,
-                       wai-routing,
-                       resource-pool == 0.2.*,
                        sqlite-simple == 0.4.*,
-                       time,
                        aeson,
-                       base64-bytestring,
-                       wai-predicates == 0.8.*,
+                       base64-string,
                        wreq == 0.2.*,
                        lens,
-                       vector
+                       vector,
+                       hashable == 1.2.*
 
   -- Directories containing source files.
   -- hs-source-dirs:
