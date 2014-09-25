@@ -13,60 +13,107 @@
 module Web.Controller where
 
 --------------------------------------------------------------------------------
-import System.IO.Error (isDoesNotExistError, tryIOError)
+import Control.Monad
+import Data.Traversable
 
 --------------------------------------------------------------------------------
+import Control.Lens
+import Data.Aeson.Types
 import Data.Text (Text, unpack)
-import Network.HTTP.Types
-import Network.Wai
-import System.Directory (getDirectoryContents)
-import System.FilePath ((</>))
+import Data.Vector (Vector)
+import Network.HTTP.Types hiding (statusCode)
+import Network.Wai hiding (responseStatus)
+import Network.Wreq
 
 --------------------------------------------------------------------------------
 import Web.Type
 
 --------------------------------------------------------------------------------
-controller :: Request -> IO (Maybe Input)
-controller req
+controller :: AppEnv -> Request -> IO (Maybe Input)
+controller env req
     | requestMethod req == methodGet
-      = dispatch req
+      = dispatch env req
     | otherwise
       = return Nothing
 
 --------------------------------------------------------------------------------
-dispatch :: Request -> IO (Maybe Input)
-dispatch req
+dispatch :: AppEnv -> Request -> IO (Maybe Input)
+dispatch env req
     = case pathInfo req of
-          []                -> dispatchIndex
-          "article":name:[] -> dispatchGetArticle name
+          []                -> dispatchIndex env
+          "article":name:[] -> dispatchGetArticle env name
           _                 -> return Nothing
 
 --------------------------------------------------------------------------------
-dispatchIndex :: IO (Maybe Input)
-dispatchIndex
-    = do xs <- loadArticleNames
-         return $ Just $ Index xs
+dispatchIndex :: AppEnv -> IO (Maybe Input)
+dispatchIndex env = fmap (Just . Index) $ loadArticlesInfo env
 
 --------------------------------------------------------------------------------
-dispatchGetArticle :: Text -> IO (Maybe Input)
-dispatchGetArticle name
-    = do eContent <- tryIOError $ readFile path
-         case eContent of
-             Left e
-                 | isDoesNotExistError e
-                   -> return Nothing
-                 | otherwise
-                   -> ioError e
-             Right content
-                 -> return $ Just $ GetArticle nameStr content
+dispatchGetArticle :: AppEnv -> Text -> IO (Maybe Input)
+dispatchGetArticle env name
+    = do r <- asJSON =<< get (domain ++ "post/" ++ nameStr)
+         let code = r ^. responseStatus . statusCode
+             json = r ^. responseBody
+
+         if code == 200
+             then either
+                  throwError
+                  (return . Just . GetArticle . Just) $ extractArticle json
+             else if code == 304
+                  then return $ Just $ GetArticle Nothing
+                  else throwError "post: Bad response from post repository"
   where
+    domain  = envPostRepo env
     nameStr = unpack name
-    path    = "articles" </> nameStr
 
 --------------------------------------------------------------------------------
-loadArticleNames :: IO [String]
-loadArticleNames
-    = do xs <- getDirectoryContents "articles"
-         let filt path = path /= "." && path /= ".."
-             cleaned   = filter filt xs
-         return cleaned
+loadArticlesInfo :: AppEnv -> IO (Vector ArticleInfo)
+loadArticlesInfo env
+    = do r <- asJSON =<< get (domain ++ "posts")
+         let code = r ^. responseStatus . statusCode
+             json = r ^. responseBody
+
+         if code /= 200
+             then throwError "summaries: Bad response from post repository"
+             else either throwError return $ extractInfos json
+
+  where
+    domain = envPostRepo env
+
+--------------------------------------------------------------------------------
+-- Extractors
+--------------------------------------------------------------------------------
+extractInfos :: Value -> Either String (Vector ArticleInfo)
+extractInfos value = parseEither infosParser value
+
+--------------------------------------------------------------------------------
+extractArticle :: Value -> Either String Article
+extractArticle value = parseEither articleParser value
+
+--------------------------------------------------------------------------------
+-- Parsers
+--------------------------------------------------------------------------------
+infosParser :: Value -> Parser (Vector ArticleInfo)
+infosParser (Array arr) = traverse infoParser arr
+infosParser _           = mzero
+
+--------------------------------------------------------------------------------
+infoParser :: Value -> Parser ArticleInfo
+infoParser (Object m)
+    = liftM3 ArticleInfo (m .: "name") (m .: "title") (m .: "date")
+infoParser _
+    = mzero
+
+--------------------------------------------------------------------------------
+articleParser :: Value -> Parser Article
+articleParser v@(Object m)
+    = do i <- infoParser v
+         liftM2 (Article i) (m .: "style") (m .: "content")
+articleParser _
+    = mzero
+
+--------------------------------------------------------------------------------
+-- Utilities
+--------------------------------------------------------------------------------
+throwError :: String -> IO a
+throwError = ioError . userError

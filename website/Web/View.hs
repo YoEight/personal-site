@@ -13,17 +13,19 @@
 module Web.View where
 
 --------------------------------------------------------------------------------
+import Data.Foldable
+
+--------------------------------------------------------------------------------
 import Data.Text (Text)
 import Data.Time
 import Network.HTTP.Types
 import Network.Wai
 import System.Locale (defaultTimeLocale)
+import Text.Blaze.Html (toMarkup)
 import Text.Hamlet (shamletFile)
 import Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
-import Text.Pandoc
 
 --------------------------------------------------------------------------------
-import Web.Pandoc
 import Web.Type
 
 --------------------------------------------------------------------------------
@@ -35,18 +37,19 @@ view respond o
     = case o of
           ArticleList as
               -> viewArticleList respond as
-          ArticleView title date doc
-              -> viewArticleView respond title date doc
+          ArticleView m
+              -> case m of
+                      Nothing  -> respond $ responseLBS status304 keepAlive ""
+                      Just art -> viewArticleView respond art
           NotFound
               -> respond $ responseLBS status404 headers "Not Found !"
 
   where
-    headers = [ (hContentType, "text/plain")
-              , (hConnection,  "keep-alive")
-              ]
+    keepAlive = [(hConnection,  "keep-alive")]
+    headers   = (hContentType, "text/plain") : keepAlive
 
 --------------------------------------------------------------------------------
-viewArticleList :: Respond -> [Article] -> IO ResponseReceived
+viewArticleList :: Foldable f => Respond -> f ArticleInfo -> IO ResponseReceived
 viewArticleList respond articles
     = respond $ responseBuilder status202 headers html
   where
@@ -59,12 +62,17 @@ viewArticleList respond articles
               ]
 
 --------------------------------------------------------------------------------
-viewArticleView :: Respond -> String -> String -> Pandoc -> IO ResponseReceived
-viewArticleView respond title date doc
+viewArticleView :: Respond -> Article -> IO ResponseReceived
+viewArticleView respond article
     = respond $ responseBuilder status202 headers html
   where
+    doc     = articleContent article
+    style   = articleStyle article
+    info    = articleInfo article
+    title   = articleTitle info
+    date    = formatTime defaultTimeLocale "%Y-%m-%d" $ articleDate info
     header  = $(shamletFile "html/article-header.hamlet")
-    docHtml = writePandocHtml doc
+    docHtml = toMarkup doc
     content = $(shamletFile "html/article.hamlet")
     html    = renderHtmlBuilder $(shamletFile "html/template.hamlet")
     headers = [ (hContentType, "text/html")

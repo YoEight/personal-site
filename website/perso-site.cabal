@@ -17,7 +17,6 @@ executable perso-site
   other-modules: Web.App
                  Web.Controller
                  Web.Model
-                 Web.Pandoc
                  Web.View
 
   default-extensions:  TemplateHaskell
@@ -26,14 +25,10 @@ executable perso-site
                        containers,
                        data-default,
                        http-types,
-                       highlighting-kate,
                        mtl,
                        text,
-                       pandoc == 1.13.*,
                        shakespeare,
                        bytestring,
-                       directory,
-                       filepath,
                        configurator,
                        fast-logger,
                        wai-extra,
@@ -41,7 +36,11 @@ executable perso-site
                        time,
                        old-locale,
                        wai == 3.*,
-                       stm
+                       stm,
+                       wreq == 0.2.*,
+                       aeson,
+                       vector,
+                       lens
 
   ghc-options: -Wall -Werror -O2 -threaded
   -- hs-source-dirs:

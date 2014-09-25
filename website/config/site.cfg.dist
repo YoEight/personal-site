@@ -1,3 +1,4 @@
 site_port = 3000
 log_file = "site.log"
 log_buffer = 4096
+post_repo = http://my.post.repo/

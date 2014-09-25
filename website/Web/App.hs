@@ -45,22 +45,26 @@ myApp
            port        <- require cfg "site_port"
            logFile     <- require cfg "log_file"
            logBufSize  <- require cfg "log_buffer"
+           postRepo    <- require cfg "post_repo"
            logSet      <- newFileLoggerSet logBufSize logFile
            mware       <- mkRequestLogger def
                                           { outputFormat = Detailed True
                                           , destination  = Logger logSet
                                           }
 
+           let env = AppEnv
+                     { envPostRepo = postRepo }
+
            putStrLn "Yo Eight's personal website !"
            putStrLn ("Listening port " ++ show port)
 
            varState <- newTMVarIO AppState
-           run port $ mware $ application varState
+           run port $ mware $ application env varState
 
 --------------------------------------------------------------------------------
-application :: TMVar AppState -> Application
-application varState request respond
-    = controller request >>=
+application :: AppEnv -> TMVar AppState -> Application
+application env varState request respond
+    = controller env request >>=
           maybe (send404 respond) (handleInput varState respond)
 
 --------------------------------------------------------------------------------
