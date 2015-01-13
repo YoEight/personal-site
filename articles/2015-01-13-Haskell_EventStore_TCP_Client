@@ -1,0 +1,83 @@
+I cut the first release of my EventStore client written in Haskell. EventStore is an open-source functional database. For more information, checkout their [website](http://geteventstore.com/).
+
+The library is hosted on [Hackage](https://hackage.haskell.org/package/eventstore) of course.
+
+I used a FRP library, [Sodium](https://hackage.haskell.org/package/sodium) to implement connection logic such as operations and subscriptions. With no surprise, it was easy to write. FRP, by construction, separates domain logic from effectful computations. Domain rules use pure functions (meaning no effecful values are involved in that case).
+
+I'm going to introduce dead-simple read and write functionalities. Haddock documentation should suffice but please ping me on twitter ([@yoeight](https://twitter.com/yoeight)) or raise an issue on GitHub otherwise.
+
+Note on EventStore connection. It differs from a SQL connection which is supposed to be close once everything has been done with the database. An EventStore connection is meant to be open as long as the application lives. It maintains a full duplex communication between the client and the server. An EventStore connection is threadsafe, so you can use it accross several threads.
+
+The library handles connection drops and tries to reconnect automatically. Everything related to reconnection can be modified using `Settings` datatype. Of course, if you really need to close the connection you can use `shutdown` function.
+
+All connection operations are asynchronous (even `connect` and `shutdown`). It uses `async` library under the hood. `Control.Concurrent.Async` is re-exported by `Database.EventStore` main module.
+
+## Show me some code
+#### Read
+```haskell
+{-# LANGUAGE OverloadedStrings #-}
+
+import Database.EventStore
+
+main :: IO ()
+main = do
+    conn <- connect defaultSettings "127.0.0.1" 1113
+    res  <- readEvent conn "foo-stream" 0 True
+    evt  <- wait res
+    print evt
+```
+
+We open an EventStore connection using default settings and usual database IP address and port. Then we read an event that has the event number 0 from `foo-stream` stream. Remember, every connection operations are asynchronous. We have to `wait` (from `async` `Control.Concurrent.Async` module) to have that read operation result. Note that I don't encourage to use `wait` everywhere but let's keep it simple for now. Once read result available, we just print it to `stdout`.
+
+The lib also supports batch reads, have a look on its [documentation](https://hackage.haskell.org/package/eventstore-0.5.0.1/docs/Database-EventStore.html) for more information.
+
+#### Write
+```haskell
+{-# LANGUAGE OverloadedStrings #-}
+
+import Data.Aeson
+import Data.Text
+import Database.EventStore
+
+fooJson :: Value
+fooJson = object [ "language"  .= "Haskell"
+                 , "isTheBest" .= True
+                 ]
+
+myEvent :: Event
+myEvent = withJson fooJson
+
+main :: IO ()
+main = do
+    conn <- connect defaultSettings "127.0.0.1" 1113
+    res  <- sendEvent conn "foo-stream" Any myEvent
+    resp <- wait res
+    print resp
+```
+
+Only difference, the use of `sendEvent`. We rely on [aeson](https://hackage.haskell.org/package/aeson) for handling JSON data. EventStore doesn't enforce JSON for storage. You can use whatever binary format you like. I didn't reflect that on library though but will in the next release. Have in mind that if you want to use EventStore Complex Event Processing (CEP), you have to store your data as JSON. The library also supports batch and transactional writes.
+
+#### A word on Subscriptions
+EventStore supports a very nice feature named subscription. The database notifies the client when a event appeared on a stream it asked notifications for. The library currently implements 2 kind of subscriptions:
+
+1. Volatile: Being notified of every stream updates from the moment the subscription has been confirmed.
+2. Catchup: Read every happened change from a given checkpoint. Once the stream has been caught up, start a volatile subscription.
+
+I'm planning to implement persistent subscriptions too.
+
+#### Conclusion
+
+These examples were obviously very simple. 'More advanced' features are along those lines though. Here's a exhaustive list of supported features:
+
+1. Read single or batch of events from regular streams (forward and backward)
+2. Read single or batch of events from `$all` internal stream (forward and backward)
+3. Single or batch events writes
+4. Transactional writes
+5. Volatile subscription
+6. Catchup subscription
+7. Authenticated request
+
+##### TODO
+
+1. Implement Persistent subscriptions
+2. Implement SSL connections.
