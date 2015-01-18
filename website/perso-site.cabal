@@ -40,7 +40,8 @@ executable perso-site
                        wreq == 0.2.*,
                        aeson,
                        vector,
-                       lens
+                       lens,
+                       base64-string
 
   ghc-options: -Wall -Werror -O2 -threaded
   -- hs-source-dirs:

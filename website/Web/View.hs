@@ -21,9 +21,9 @@ import Data.Time
 import Network.HTTP.Types
 import Network.Wai
 import System.Locale (defaultTimeLocale)
-import Text.Blaze.Html (toMarkup)
-import Text.Hamlet (shamletFile)
+import Text.Blaze.Html (preEscapedToHtml, unsafeByteString)
 import Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
+import Text.Hamlet (shamletFile)
 
 --------------------------------------------------------------------------------
 import Web.Type
@@ -57,7 +57,7 @@ viewArticleList respond articles
     header  = ""     :: Text
     content = $(shamletFile "html/articles.hamlet")
     html    = renderHtmlBuilder $(shamletFile "html/template.hamlet")
-    headers = [ (hContentType, "text/html")
+    headers = [ (hContentType, "text/html;charset=utf-8")
               , (hConnection,  "keep-alive")
               ]
 
@@ -67,14 +67,14 @@ viewArticleView respond article
     = respond $ responseBuilder status202 headers html
   where
     doc     = articleContent article
-    style   = articleStyle article
+    style   = preEscapedToHtml $ articleStyle article --unsafeByteString $ encodeUtf8 $ articleStyle article
     info    = articleInfo article
     title   = articleTitle info
     date    = formatTime defaultTimeLocale "%Y-%m-%d" $ articleDate info
     header  = $(shamletFile "html/article-header.hamlet")
-    docHtml = toMarkup doc
+    docHtml = unsafeByteString doc
     content = $(shamletFile "html/article.hamlet")
     html    = renderHtmlBuilder $(shamletFile "html/template.hamlet")
-    headers = [ (hContentType, "text/html")
+    headers = [ (hContentType, "text/html;charset=utf-8")
               , (hConnection,  "keep-alive")
               ]

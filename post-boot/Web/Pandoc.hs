@@ -12,11 +12,7 @@
 module Web.Pandoc where
 
 --------------------------------------------------------------------------------
-import Data.ByteString.Lazy (ByteString)
-import Data.ByteString.Lazy.Char8 (pack)
-
---------------------------------------------------------------------------------
-import Text.Blaze.Html (Html, unsafeByteString)
+import Data.ByteString.Lazy.Char8 (ByteString, pack)
 import Text.Blaze.Html.Renderer.Utf8 (renderHtml)
 import Text.Highlighting.Kate (haddock, styleToCss)
 import Text.Pandoc

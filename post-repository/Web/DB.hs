@@ -23,16 +23,17 @@ module Web.DB
     ) where
 
 --------------------------------------------------------------------------------
+import Data.ByteString (ByteString)
+import Data.Maybe
+
+--------------------------------------------------------------------------------
 import qualified Data.Text      as S
-import qualified Data.Text.Lazy as L
+import           Data.Time
+import           Database.SQLite.Simple
+import           Database.SQLite.Simple.Types
 
 --------------------------------------------------------------------------------
-import Data.Time
-import Database.SQLite.Simple
-import Database.SQLite.Simple.Types
-
---------------------------------------------------------------------------------
-type Content  = L.Text
+type Content  = ByteString
 type Etag     = Int
 type PostName = S.Text
 type Title    = S.Text
@@ -55,15 +56,15 @@ data PostInfo
 data Post
     = Post
       { postInfo    :: !PostInfo
-      , postStyle   :: !L.Text
-      , postContent :: !L.Text
+      , postStyle   :: !S.Text
+      , postContent :: !ByteString
       }
 
 --------------------------------------------------------------------------------
 insertPost :: S.Text
            -> S.Text
-           -> L.Text
-           -> L.Text
+           -> S.Text
+           -> ByteString
            -> Int
            -> UTCTime
            -> Connection
@@ -74,8 +75,8 @@ insertPost name title style content etag date con
     row = (name, title, style, content, etag, date)
 
 --------------------------------------------------------------------------------
-retrievePost :: PostName -> Etag -> Connection -> IO (Either Status Post)
-retrievePost name etag con
+retrievePost :: PostName -> Maybe Etag -> Connection -> IO (Either Status Post)
+retrievePost name mEtag con
     = do resE <- query con qEtagMatchesPost eRow :: IO [Only Null]
          let matches = not $ null resE
 
@@ -94,6 +95,7 @@ retrievePost name etag con
 
                                 return $ Right post
   where
+    etag = fromMaybe 0 mEtag
     eRow = (name, etag)
     nRow = Only name
 
@@ -148,4 +150,4 @@ qEtagMatchesPost
 --------------------------------------------------------------------------------
 qGetPosts :: Query
 qGetPosts
-    = "SELECT name, title, etag, date FROM posts"
+    = "SELECT name, title, etag, date FROM posts ORDER BY date DESC"

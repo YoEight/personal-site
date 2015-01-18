@@ -14,16 +14,18 @@ module Web.Controller where
 
 --------------------------------------------------------------------------------
 import Control.Monad
+import Data.ByteString.Char8 (pack)
 import Data.Traversable
 
 --------------------------------------------------------------------------------
-import Control.Lens
-import Data.Aeson.Types
-import Data.Text (Text, unpack)
-import Data.Vector (Vector)
-import Network.HTTP.Types hiding (statusCode)
-import Network.Wai hiding (responseStatus)
-import Network.Wreq
+import           Control.Lens
+import qualified Codec.Binary.Base64.String as Base64
+import           Data.Aeson.Types
+import           Data.Text (Text, unpack)
+import           Data.Vector (Vector)
+import           Network.HTTP.Types hiding (statusCode)
+import           Network.Wai hiding (responseStatus)
+import           Network.Wreq
 
 --------------------------------------------------------------------------------
 import Web.Type
@@ -106,9 +108,13 @@ infoParser _
 
 --------------------------------------------------------------------------------
 articleParser :: Value -> Parser Article
-articleParser v@(Object m)
-    = do i <- infoParser v
-         liftM2 (Article i) (m .: "style") (m .: "content")
+articleParser (Object m)
+    = do v  <- m .: "info"
+         i  <- infoParser v
+         ec <- m .:"content"
+         s  <- m .: "style"
+         let content = pack $ Base64.decode $ unpack ec
+         return $ Article i s content
 articleParser _
     = mzero
 

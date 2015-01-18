@@ -11,11 +11,14 @@
 -- Portability : non-portable
 --
 --------------------------------------------------------------------------------
+import qualified Data.ByteString.Base64 as Base64
+import Blaze.ByteString.Builder.Char.Utf8
 import Data.Aeson
 import Data.Configurator
 import Data.Default (def)
 import Data.Predicate
 import Data.Text (Text)
+import Data.Text.Encoding
 import Database.SQLite.Simple hiding (query)
 import Network.HTTP.Types
 import Network.Wai
@@ -50,7 +53,7 @@ main = do cfg        <- load [Required "config/site.cfg"]
 routes :: DBName -> Routes a IO ()
 routes db
     = do get "posts"      (getPosts db) $ constant ()
-         get "post/:name" (getPost db)  $ capture ":name" .&. query "etag"
+         get "post/:name" (getPost db)  $ capture "name" .&. opt (query "etag")
 
 --------------------------------------------------------------------------------
 getPosts :: DBName -> ignore -> Continue IO -> IO ResponseReceived
@@ -63,10 +66,13 @@ getPosts db _ respond
              respond $ responseLBS status200 headers bytes
 
 --------------------------------------------------------------------------------
-getPost :: DBName -> (PostName ::: Etag) -> Continue IO -> IO ResponseReceived
-getPost db (name ::: etag) respond
+getPost :: DBName
+        -> (PostName ::: Maybe Etag)
+        -> Continue IO
+        -> IO ResponseReceived
+getPost db (name ::: mEtag) respond
     = withConnection db $ \con ->
-          do rE <- retrievePost name etag con
+          do rE <- retrievePost name mEtag con
              case rE of
                  Left s
                      | NotFound <- s -> respond $ responseLBS status404 [] ""
@@ -74,7 +80,8 @@ getPost db (name ::: etag) respond
                  Right post
                      -> let bytes   = encode $ postJSON post
                             headers = [(hContentType, "application/json")] in
-                        respond $ responseLBS status200 headers bytes
+                        respond $
+                        responseLBS status200 headers bytes
 
 --------------------------------------------------------------------------------
 -- Encoding
@@ -92,5 +99,8 @@ postJSON :: Post -> Value
 postJSON post
     = object [ "info"    .= postInfoJSON (postInfo post)
              , "style"   .= postStyle post
-             , "content" .= postContent post
+             , "content" .= encoded
              ]
+  where
+    content = postContent post
+    encoded = decodeLatin1 $ Base64.encode content

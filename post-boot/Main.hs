@@ -11,6 +11,7 @@
 --
 -------------------------------------------------------------------------------
 import Control.Monad
+import Data.ByteString (pack)
 import Data.Foldable (traverse_)
 import Data.Maybe
 import Data.Traversable
@@ -127,7 +128,7 @@ extractPostContent value
         = do enc <- m .: "encoding"
              con <- m .: "content"
              case enc of
-                 "base64" -> return $ decode $ unpack con
+                 "base64" -> return $ decode con
                  x        -> let tech = unpack x
                                  msg  = "Unsupported encoding " ++ tech in
                              fail msg
@@ -147,12 +148,12 @@ qInsertPost
 qCreatePosts :: Query
 qCreatePosts
     = "CREATE TABLE posts(\
-      \    name    VARCHAR NOT NULL,\
-      \    title   VARCHAR NOT NULL,\
-      \    style   VARCHAR NOT NULL,\
-      \    content VARCHAR NOT NULL,\
-      \    etag    INT     NOT NULL,\
-      \    date    DATE    NOT NULL \
+      \    name    TEXT NOT NULL,\
+      \    title   TEXT NOT NULL,\
+      \    style   TEXT NOT NULL,\
+      \    content BLOB NOT NULL,\
+      \    etag    INT  NOT NULL,\
+      \    date    DATE NOT NULL \
       \);"
 
 --------------------------------------------------------------------------------

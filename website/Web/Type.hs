@@ -13,6 +13,7 @@
 module Web.Type where
 
 --------------------------------------------------------------------------------
+import Data.ByteString
 import Data.Foldable
 
 --------------------------------------------------------------------------------
@@ -43,7 +44,7 @@ data Article
     = Article
       { articleInfo    :: !ArticleInfo
       , articleStyle   :: !Text
-      , articleContent :: !Text
+      , articleContent :: !ByteString
       }
 
 --------------------------------------------------------------------------------
