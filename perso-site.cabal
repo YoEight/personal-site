@@ -29,7 +29,7 @@ executable perso-site
                        highlighting-kate,
                        mtl,
                        text,
-                       pandoc == 1.13.*,
+                       pandoc,
                        shakespeare,
                        bytestring,
                        directory,
@@ -40,7 +40,7 @@ executable perso-site
                        warp,
                        time,
                        old-locale,
-                       wai == 3.*,
+                       wai,
                        stm
 
   ghc-options: -Wall -Werror -O2 -threaded
